@@ -22,9 +22,9 @@ class ImageDataset(Dataset):
     def __getitem__(self, idx):
         img_A = self.transform(Image.open(self.files_A[idx % len(self.files_A)]).convert("RGB"))
         img_B = self.transform(Image.open(self.files_B[idx % len(self.files_B)]).convert("RGB"))
-        real_A = self.transform(Image.open(random.choice(self.files_A)).convert("RGB"))
-        real_B = self.transform(Image.open(random.choice(self.files_B)).convert("RGB"))
-        return img_A, img_B, real_A, real_B
+        # real_A = self.transform(Image.open(random.choice(self.files_A)).convert("RGB"))
+        # real_B = self.transform(Image.open(random.choice(self.files_B)).convert("RGB"))
+        return img_A, img_B#, real_A, real_B
 
 
 def Loader(data_name="selfie2anime", mode="train", batch_size=1, num_workers=2):

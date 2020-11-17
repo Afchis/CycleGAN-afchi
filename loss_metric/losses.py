@@ -24,7 +24,6 @@ def GenLoss(img_A, img_B, same_A, same_B, res_A, res_B, pred_fake_A, pred_fake_B
     loss_cycle_G = F.l1_loss(res_A, img_A) + F.l1_loss(res_B, img_B)
     loss_GAN_G = F.mse_loss(pred_fake_A, trues) + F.mse_loss(pred_fake_B, trues)
     return loss_GAN_G, loss_cycle_G, loss_identity_G
-    # return 2.5*loss_identity_G + 10.*loss_cycle_G + loss_GAN_G
 
 
 def DisLoss(pred_fake_detach, pred_real):

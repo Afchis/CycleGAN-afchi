@@ -7,8 +7,8 @@ from torch.utils.tensorboard import SummaryWriter
 # import class()
 from model.generator import Generator
 from model.discriminator import Discriminator
-from utils.logger import Logger
 from utils.utils import LambdaLR
+from utils.logger import Logger
 
 # import def()
 from dataloader.dataloader import Loader
@@ -18,9 +18,9 @@ from utils.logger import PrintModelsParameters
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--dataset", type=str, default="selfie2anime", help="Dataset name")
-parser.add_argument("--num_workers", type=int, default=8, help="Num worker")
-parser.add_argument("--batch", type=int, default=4, help="Batch size")
+parser.add_argument("--dataset", type=str, default="horse2zebra", help="Dataset name")
+parser.add_argument("--num_workers", type=int, default=12, help="Num worker")
+parser.add_argument("--batch", type=int, default=6, help="Batch size")
 parser.add_argument("--epochs", type=int, default=200, help="Num epochs")
 parser.add_argument("--lr", type=float, default=0.0002, help="Learning rate")
 parser.add_argument("--vis", type=bool, default=False, help="Visual")
@@ -34,10 +34,12 @@ args = parser.parse_args()
 writer = SummaryWriter('ignore/runs/%s' % args.tb)
 print("Tensorboard name: %s" % args.tb)
 
+
 # init data
 print(" "*75, "\r", "Loading data...", end="\r")
 train_loader = Loader(data_name=args.dataset, mode="train", batch_size=args.batch, num_workers=args.num_workers)
 print("Dataloader len:", len(train_loader))
+
 
 # init models
 print(" "*75, "\r", "Loading models...", end="\r")
@@ -47,6 +49,16 @@ G_model_BtoA = Generator(3, 3).to(device)
 D_model_A = Discriminator(3).to(device)
 D_model_B = Discriminator(3).to(device)
 PrintModelsParameters(generator=G_model_AtoB, discriminator=D_model_A)
+
+def save_model(model, mode="AtoB"):
+    directory = "ignore/weigths/%s" % args.dataset
+    try:
+        if not os.path.exists(self.directory):
+            os.makedirs(self.directory)
+            print("Create directory: " + self.directory)
+    except OSError:
+        print ('Error: Creating directory. ' +  self.directory)
+    torch.save(model.state_dict(), "ignore/weights/%s/%s_s.pth" % (args.dataset, args.tb, mode))
 
 # init optimizer and scheduler
 print(" "*75, "\r", "Loading optimizer...", end="\r")
@@ -66,9 +78,11 @@ def train():
     for epoch in range(args.epochs):
         logger.init()
         for i, data in enumerate(train_loader):
+            img_A, img_B = data
+            img_A, img_B = img_A.to(device), img_B.to(device)
+            logger.grad_norms(img_A, img_B, optimizer_G, optimizer_D_A, optimizer_D_B,
+                              G_model_AtoB, G_model_BtoA, D_model_A, D_model_B, writer)
             optimizer_G.zero_grad()
-            img_A, img_B, real_A, real_B = data
-            img_A, img_B, real_A, real_B = img_A.to(device), img_B.to(device), real_A.to(device), real_B.to(device)
             # Generators:
                  ## make same img for identity loss:
             same_B = G_model_AtoB(img_B)
@@ -89,14 +103,14 @@ def train():
                 ## D_A:
             optimizer_D_A.zero_grad()
             pred_fake_A_detach = D_model_A(fake_A.detach())
-            pred_real_A = D_model_A(real_A)
+            pred_real_A = D_model_A(img_A)
             loss_D_A = DisLoss(pred_fake_A_detach, pred_real_A)
             loss_D_A.backward()
             optimizer_D_A.step()
                 ## D_B:
             optimizer_D_B.zero_grad()
             pred_fake_B_detach = D_model_B(fake_B.detach())
-            pred_real_B = D_model_B(real_B)
+            pred_real_B = D_model_B(img_B)
             loss_D_B = DisLoss(pred_fake_B_detach, pred_real_B)
             loss_D_B.backward()  
             optimizer_D_B.step()
@@ -113,6 +127,8 @@ def train():
                           iter=100)
         logger.printer_epoch()
         logger.tensorboard_epoch(writer=writer)
+        save_model(G_model_AtoB, mode="AtoB")
+        save_model(G_model_BtoA, mode="BtoA")
 
 
 if __name__ == "__main__":
