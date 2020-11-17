@@ -54,11 +54,11 @@ PrintModelsParameters(generator=G_model_AtoB, discriminator=D_model_A)
 def save_model(model, mode="AtoB"):
     directory = "ignore/weigths/%s" % args.dataset
     try:
-        if not os.path.exists(self.directory):
+        if not os.path.exists(directory):
             os.makedirs(self.directory)
-            print("Create directory: " + self.directory)
+            print("Create directory: " + directory)
     except OSError:
-        print ('Error: Creating directory. ' +  self.directory)
+        print ('Error: Creating directory. ' +  directory)
     torch.save(model.state_dict(), "ignore/weights/%s/%s_s.pth" % (args.dataset, args.tb, mode))
 
 # init optimizer and scheduler
@@ -122,10 +122,10 @@ def train():
             logger.printer(iter=1)
             logger.visual(img_A, img_B, fake_A, fake_B, res_A, res_B,
                           iter=50)
-        logger.printer_epoch()
-        logger.tensorboard_epoch(writer=writer)
         save_model(G_model_AtoB, mode="AtoB")
         save_model(G_model_BtoA, mode="BtoA")
+        logger.printer_epoch()
+        logger.tensorboard_epoch(writer=writer)
 
 
 if __name__ == "__main__":
