@@ -1,3 +1,4 @@
+import os
 import itertools
 import argparse
 
@@ -124,7 +125,7 @@ def train():
             logger.update("loss_D_B", loss_D_B)
             logger.printer(iter=1)
             logger.visual(img_A, img_B, same_A, same_B, fake_A, fake_B, res_A, res_B,
-                          iter=100)
+                          iter=50)
         logger.printer_epoch()
         logger.tensorboard_epoch(writer=writer)
         save_model(G_model_AtoB, mode="AtoB")
