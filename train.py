@@ -84,9 +84,6 @@ def train():
                               G_model_AtoB, G_model_BtoA, D_model_A, D_model_B, writer)
             optimizer_G.zero_grad()
             # Generators:
-                 ## make same img for identity loss:
-            same_B = G_model_AtoB(img_B)
-            same_A = G_model_BtoA(img_A)
                  ## make fake img and use discrimitanor for GAN loss:
             fake_B = G_model_AtoB(img_A)
             fake_A = G_model_BtoA(img_B)
@@ -95,8 +92,8 @@ def train():
                  ## restore img for cycle loss:
             res_B = G_model_AtoB(fake_A)
             res_A = G_model_BtoA(fake_B)
-            loss_GAN_G, loss_cycle_G, loss_identity_G = GenLoss(img_A, img_B, same_A, same_B, res_A, res_B, pred_fake_A, pred_fake_B)
-            loss_G = loss_GAN_G + 10.*loss_cycle_G + 5.*loss_identity_G
+            loss_GAN_G, loss_cycle_G = GenLoss(img_A, img_B, res_A, res_B, pred_fake_A, pred_fake_B)
+            loss_G = loss_GAN_G + 10.*loss_cycle_G
             loss_G.backward()
             optimizer_G.step()
             # Discrimitators:
@@ -119,12 +116,11 @@ def train():
             logger.update("loss_G", loss_G)
             logger.update("loss_GAN_G", loss_GAN_G)
             logger.update("loss_cycle_G", loss_cycle_G)
-            logger.update("loss_identity_G", loss_identity_G)
             logger.update("loss_D_A", loss_D_A)
             logger.update("loss_D_B", loss_D_B)
             logger.printer(iter=1)
-            logger.visual(img_A, img_B, same_A, same_B, fake_A, fake_B, res_A, res_B,
-                          iter=100)
+            logger.visual(img_A, img_B, fake_A, fake_B, res_A, res_B,
+                          iter=50)
         logger.printer_epoch()
         logger.tensorboard_epoch(writer=writer)
         save_model(G_model_AtoB, mode="AtoB")

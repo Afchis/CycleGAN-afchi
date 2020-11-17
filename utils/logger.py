@@ -40,7 +40,6 @@ class Logger():
             "loss_G" : 0,
             "loss_GAN_G" : 0,
             "loss_cycle_G" : 0,
-            "loss_identity_G" : 0,
             "loss_D_A" : 0,
             "loss_D_B" : 0
 		}
@@ -76,17 +75,15 @@ class Logger():
             loss_D_B = self.disp["loss_D_B"]/self.disp["iter_epoch"]
             loss_GAN_G = self.disp["loss_GAN_G"]/self.disp["iter_epoch"]
             loss_cycle_G = self.disp["loss_cycle_G"]/self.disp["iter_epoch"]
-            loss_identity_G = self.disp["loss_identity_G"]/self.disp["iter_epoch"]
             writer.add_scalars("%s" % self.tb, {"loss_G" : loss_G,
                                                 "loss_D_A" : loss_D_A,
                                                 "loss_D_B" : loss_D_B,
                                                 "loss_GAN_G" : loss_GAN_G,
-                                                "loss_cycle_G" : loss_cycle_G,
-                                                "loss_identity_G" : loss_identity_G}, self.epoch)
+                                                "loss_cycle_G" : loss_cycle_G}, self.epoch)
 
-    def visual(self, img_A, img_B, same_A, same_B, fake_A, fake_B, res_A, res_B, iter):
+    def visual(self, img_A, img_B, fake_A, fake_B, res_A, res_B, iter):
         if self.vis == True and self.iter % iter == 0:
-            out = torch.cat([img_A, img_B, fake_B, fake_A, res_A, res_B, same_A, same_B], dim=0).detach().cpu()
+            out = torch.cat([img_A, img_B, fake_B, fake_A, res_A, res_B], dim=0).detach().cpu()
             grid_img = torchvision.utils.make_grid(out, nrow=self.batch_size*2)
             grid_img = torchvision.transforms.functional.to_pil_image(grid_img)
             grid_img.save("ignore/visual/" + self.dataset_name + "/%s/%i.png" % (self.tb, self.iter))
@@ -96,21 +93,15 @@ class Logger():
         if self.tb != "None" and self.disp["iter_epoch"] == 0:
             grad_norms = self._grad_norms_(img_A, img_B, optimizer_G, optimizer_D_A, optimizer_D_B,
                                            G_model_AtoB, G_model_BtoA, D_model_A, D_model_B)
-            writer.add_scalars("%s_grad" % self.tb, {"loss_identity_AtoB" : grad_norms["loss_identity_AtoB"],
-                                                     "loss_identity_BtoA" : grad_norms["loss_identity_BtoA"],
-                                                     "loss_cycle_AtoB" : grad_norms["loss_cycle_AtoB"],
+            writer.add_scalars("%s_grad" % self.tb, {"loss_cycle_AtoB" : grad_norms["loss_cycle_AtoB"],
                                                      "loss_cycle_BtoA" : grad_norms["loss_cycle_BtoA"],
                                                      "loss_GAN_AtoB" : grad_norms["loss_GAN_AtoB"],
                                                      "loss_GAN_BtoA" : grad_norms["loss_GAN_BtoA"]}, (self.epoch-1))
-            writer.add_scalars("%s_grad_first" % self.tb, {"loss_identity_AtoB_first_layer" : grad_norms["loss_identity_AtoB_first_layer"],
-                                                           "loss_identity_BtoA_first_layer" : grad_norms["loss_identity_BtoA_first_layer"],
-                                                           "loss_cycle_AtoB_first_layer" : grad_norms["loss_cycle_AtoB_first_layer"],
+            writer.add_scalars("%s_grad_first" % self.tb, {"loss_cycle_AtoB_first_layer" : grad_norms["loss_cycle_AtoB_first_layer"],
                                                            "loss_cycle_BtoA_first_layer" : grad_norms["loss_cycle_BtoA_first_layer"],
                                                            "loss_GAN_AtoB_first_layer" : grad_norms["loss_GAN_AtoB_first_layer"],
                                                            "loss_GAN_BtoA_first_layer" : grad_norms["loss_GAN_BtoA_first_layer"]}, (self.epoch-1))
-            writer.add_scalars("%s_grad_last" % self.tb, {"loss_identity_AtoB_last_layer" : grad_norms["loss_identity_AtoB_last_layer"],
-                                                          "loss_identity_BtoA_last_layer" : grad_norms["loss_identity_BtoA_last_layer"],
-                                                          "loss_cycle_AtoB_last_layer" : grad_norms["loss_cycle_AtoB_last_layer"],
+            writer.add_scalars("%s_grad_last" % self.tb, {"loss_cycle_AtoB_last_layer" : grad_norms["loss_cycle_AtoB_last_layer"],
                                                           "loss_cycle_BtoA_last_layer" : grad_norms["loss_cycle_BtoA_last_layer"],
                                                           "loss_GAN_AtoB_last_layer" : grad_norms["loss_GAN_AtoB_last_layer"],
                                                           "loss_GAN_BtoA_last_layer" : grad_norms["loss_GAN_BtoA_last_layer"]}, (self.epoch-1))
@@ -136,8 +127,6 @@ class Logger():
         
         def _generator_():#img_A, img_B, G_model_AtoB, G_model_BtoA, D_model_A, D_model_B
             outs = dict()
-            outs["same_B"] = G_model_AtoB(img_B)
-            outs["same_A"] = G_model_BtoA(img_A)
             outs["fake_B"] = G_model_AtoB(img_A)
             outs["fake_A"] = G_model_BtoA(img_B)
             outs["pred_fake_A"] = D_model_A(outs["fake_A"])
@@ -147,18 +136,6 @@ class Logger():
             return outs
 
         outs = _generator_()
-
-        optimizer_G.zero_grad()
-        loss_identity_AtoB = F.l1_loss(outs["same_B"], img_B)
-        loss_identity_AtoB.backward(retain_graph=True)
-        grad_norms["loss_identity_AtoB"] = _l2_norm_grad_(G_model_AtoB)
-        grad_norms["loss_identity_AtoB_first_layer"], grad_norms["loss_identity_AtoB_last_layer"] = _layer_mean_grad_(G_model_AtoB)
-
-        optimizer_G.zero_grad()
-        loss_identity_BtoA = F.l1_loss(outs["same_A"], img_A)
-        loss_identity_BtoA.backward(retain_graph=True)
-        grad_norms["loss_identity_BtoA"] = _l2_norm_grad_(G_model_BtoA)
-        grad_norms["loss_identity_BtoA_first_layer"], grad_norms["loss_identity_BtoA_last_layer"] = _layer_mean_grad_(G_model_BtoA)
 
         optimizer_G.zero_grad()
         loss_cycle_AtoB = F.l1_loss(outs["res_A"], img_A)
