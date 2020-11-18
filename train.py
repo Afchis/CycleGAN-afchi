@@ -122,8 +122,8 @@ def train(dataset=args.dataset, tb=args.tb):
             logger.printer(iter=1)
             logger.visual(img_A, img_B, fake_A, fake_B, res_A, res_B,
                           iter=50)
-        save_model(G_model_AtoB, dataset=dataset, tb=tb, mode="AtoB")
-        save_model(G_model_BtoA, dataset=dataset, tb=tb, mode="BtoA")
+        # save_model(G_model_AtoB, dataset=dataset, tb=tb, mode="AtoB")
+        # save_model(G_model_BtoA, dataset=dataset, tb=tb, mode="BtoA")
         logger.printer_epoch()
         logger.tensorboard_epoch(writer=writer)
 
