@@ -72,7 +72,7 @@ lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(optimizer_D_A, lr_lambda=La
 lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(optimizer_D_B, lr_lambda=LambdaLR(args.epochs, 0, 100).step)
 
 
-def train():
+def train(dataset=args.dataset, tb=args.tb):
     print(" "*75, "\r", "Loading training...", end="\r")
     logger = Logger(dataset=args.dataset, tb=args.tb, batch_size=args.batch,
                     vis=args.vis ,len_data=len(train_loader))
@@ -122,8 +122,8 @@ def train():
             logger.printer(iter=1)
             logger.visual(img_A, img_B, fake_A, fake_B, res_A, res_B,
                           iter=50)
-        save_model(G_model_AtoB, mode="AtoB")
-        save_model(G_model_BtoA, mode="BtoA")
+        save_model(G_model_AtoB, dataset=dataset, tb=tb, mode="AtoB")
+        save_model(G_model_BtoA, dataset=dataset, tb=tb, mode="BtoA")
         logger.printer_epoch()
         logger.tensorboard_epoch(writer=writer)
 
