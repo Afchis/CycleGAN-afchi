@@ -78,22 +78,13 @@ def train(dataset=args.dataset, tb=args.tb):
                     vis=args.vis ,len_data=len(train_loader))
     for epoch in range(args.epochs):
         logger.init()
-        imgs_A = torch.tensor([]).to(device)
-        imgs_B = torch.tensor([]).to(device)
-        for i, data in emunerate(train_loader):
-            if i == 4:
-                break
-            img_A, img_B = dataset
-            img_A, img_B = img_A.to(device), img_B.to(device)
-            imgs_A = torch.cat([imgs_A, img_A], dim=0)
-            imgs_B = torch.cat([imgs_B, img_A], dim=0)
-            logger.grad_norms(img_A, img_B, optimizer_G, optimizer_D_A, optimizer_D_B,
-                              G_model_AtoB, G_model_BtoA, D_model_A, D_model_B, writer)
-
-
         for i, data in enumerate(train_loader):
             img_A, img_B = data
             img_A, img_B = img_A.to(device), img_B.to(device)
+            logger.grad_norms(img_A, img_B, optimizer_G, optimizer_D_A, optimizer_D_B,
+                              G_model_AtoB, G_model_BtoA, D_model_A, D_model_B)
+            if i == 10:
+                logger.tensorboard_grads(writer)
             optimizer_G.zero_grad()
             # Generators:
                  ## make same img for identity loss:
