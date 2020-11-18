@@ -72,7 +72,7 @@ lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(optimizer_D_A, lr_lambda=La
 lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(optimizer_D_B, lr_lambda=LambdaLR(args.epochs, 0, 100).step)
 
 
-def train(args.dataset, args.tb):
+def train(dataset=args.dataset, tb=args.tb):
     print(" "*75, "\r", "Loading training...", end="\r")
     logger = Logger(dataset=args.dataset, tb=args.tb, batch_size=args.batch,
                     vis=args.vis ,len_data=len(train_loader))
