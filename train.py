@@ -63,10 +63,10 @@ def save_model(model, dataset=args.dataset, tb=args.tb, mode="AtoB"):
 
 # init optimizer and scheduler
 print(" "*75, "\r", "Loading optimizer...", end="\r")
-optimizer_G = torch.optim.Adam(itertools.chain(G_model_AtoB.parameters(), G_model_BtoA.parameters()),
-                               lr=args.lr, betas=(0.5, 0.999))
-optimizer_D_A = torch.optim.Adam(D_model_A.parameters(), lr=args.lr, betas=(0.5, 0.999))
-optimizer_D_B = torch.optim.Adam(D_model_B.parameters(), lr=args.lr, betas=(0.5, 0.999))
+optimizer_G = torch.optim.SGD(itertools.chain(G_model_AtoB.parameters(), G_model_BtoA.parameters()),
+                               lr=args.lr)#, betas=(0.5, 0.999))
+optimizer_D_A = torch.optim.SGD(D_model_A.parameters(), lr=args.lr)#, betas=(0.5, 0.999))
+optimizer_D_B = torch.optim.SGD(D_model_B.parameters(), lr=args.lr)#, betas=(0.5, 0.999))
 lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=LambdaLR(args.epochs, 0, 100).step)
 lr_scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(optimizer_D_A, lr_lambda=LambdaLR(args.epochs, 0, 100).step)
 lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(optimizer_D_B, lr_lambda=LambdaLR(args.epochs, 0, 100).step)
@@ -108,15 +108,17 @@ def train(dataset=args.dataset, tb=args.tb):
             pred_fake_A_detach = D_model_A(fake_A.detach())
             pred_real_A = D_model_A(img_A)
             loss_D_A = DisLoss(pred_fake_A_detach, pred_real_A)
-            loss_D_A.backward()
-            optimizer_D_A.step()
+            if loss_D_A > 0.3:
+                loss_D_A.backward()
+                optimizer_D_A.step()
                 ## D_B:
             optimizer_D_B.zero_grad()
             pred_fake_B_detach = D_model_B(fake_B.detach())
             pred_real_B = D_model_B(img_B)
             loss_D_B = DisLoss(pred_fake_B_detach, pred_real_B)
-            loss_D_B.backward()  
-            optimizer_D_B.step()
+            if loss_D_B > 0.3:
+                loss_D_B.backward()  
+                optimizer_D_B.step()
             # logging:
             logger.update("iter_epoch", None)
             logger.update("loss_G", loss_G)
